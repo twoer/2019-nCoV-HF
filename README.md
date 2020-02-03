@@ -1,5 +1,7 @@
 # hf2019ncov
 
+![](./demo.jpg)
+
 ## Project setup
 ```
 npm install
