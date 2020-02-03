@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <div class="header">
-      <h1>合肥新管状病毒感染确诊病例</h1>
+      <h1>合肥新冠状病毒感染确诊病例</h1>
       <p>所有数据来源于网络，仅供参考，不喜勿喷</p>
     </div>
     <div class="fixed-link">
