@@ -11,15 +11,21 @@
       <a v-if="showMode === 'heat'" @click="switchShowMode('distribute')" class="icon-mode">
         <img src="./assets/icon-heat.jpg">
       </a> -->
+      <a @click="getCurrentLocation" class="icon-location">
+        <img src="./assets/icon-location.jpg">
+      </a>
       <a href="https://github.com/twoer/2019-nCoV-HF">
         <img src="./assets/icon-github.jpg">
       </a>
     </div>
+    <div class="fixed-info">数据更新于 2020/02/04 20:00 共计(60)个小区</div>
     <div id="container"></div>
   </div>
 </template>
 
 <script>
+const BMap = window['BMap']
+const BMapLib = window['BMapLib']
 const CASE_DATA = [
   {
     key: '肥东县',
@@ -49,7 +55,8 @@ const CASE_DATA = [
   {
     key: '长丰县',
     list: [
-      '117.19813,31.952126,岗集镇玉成明珠苑'
+      '117.19813,31.952126,岗集镇玉成明珠苑',
+      '117.264533,31.957851,阿奎利亚城品'
     ]
   },
   {
@@ -84,7 +91,8 @@ const CASE_DATA = [
       '117.316008,31.880239,温莎国际广场',
       '117.33319,31.873209,长江东路五里井17栋',
       '117.330442,31.877155,铜陵路工业锅炉厂宿舍',
-      '117.374088,31.880635,斯瑞新景苑'
+      '117.374088,31.880635,斯瑞新景苑',
+      '117.330529,31.875132,恒丰嘉园'
     ]
   },
   {
@@ -103,7 +111,9 @@ const CASE_DATA = [
       '117.217465,31.814236,天和园',
       '117.220322,31.82185,内森庄园',
       '117.250595,31.876861,中铁青秀城',
-      '117.266745,31.874394,和谐家园（长丰南路）'
+      '117.266745,31.874394,和谐家园（长丰南路）',
+      '117.248554,31.863732,颐和阳光100小区',
+      '117.248281,31.871345,龙居山庄天龙居'
     ]
   },
   {
@@ -136,23 +146,23 @@ export default {
   data () {
     return {
       showMode: 'heat',
+      map: null,
+      currentPoint: null,
       heatmapOverlay: null
     }
   },
   mounted () {
     const isSupportCanvas = () => {
-      var elem = document.createElement('canvas')
+      let elem = document.createElement('canvas')
       return !!(elem.getContext && elem.getContext('2d'))
     }
-    const BMap = window['BMap']
-    const BMapLib = window['BMapLib']
     if (!BMap) {
       return
     }
-    let map = new BMap.Map('container')
+    this.map = new BMap.Map('container')
     let point = new BMap.Point(117.233675, 31.827828)
-    map.centerAndZoom(point, 12)
-    map.enableScrollWheelZoom()
+    this.map.centerAndZoom(point, 12)
+    this.map.enableScrollWheelZoom()
 
     let points = [
     ]
@@ -174,7 +184,7 @@ export default {
         0.5: 'rgb(0, 110, 255)',
         0.8: 'rgb(100, 0, 255)'
       } })
-    map.addOverlay(this.heatmapOverlay)
+    this.map.addOverlay(this.heatmapOverlay)
     this.heatmapOverlay.setDataSet({ data: points, max: 13 })
     this.heatmapOverlay.show()
   },
@@ -186,6 +196,25 @@ export default {
       } else if (mode === 'distribute') {
         this.heatmapOverlay.hide()
       }
+    },
+    getCurrentLocation () {
+      let geolocation = new BMap.Geolocation()
+      geolocation.getCurrentPosition((r) => {
+        if (!r.point) {
+          alert('获取位置失败，请重试')
+          return
+        }
+        if (this.currentPoint) {
+          this.currentPoint.remove()
+        }
+        let icon = new BMap.Icon('./img/point.png', new BMap.Size(30, 30), {
+          imageSize: new BMap.Size(30, 30)
+        })
+        this.currentPoint = new BMap.Marker(r.point, { icon })
+        this.map.addOverlay(this.currentPoint)
+        // this.map.panTo(r.point)
+        this.map.centerAndZoom(r.point, 15)
+      }, { enableHighAccuracy: true })
     }
   }
 }
@@ -231,8 +260,8 @@ html,body,#app,#container
 .fixed-link
 {
   position: fixed;
-  bottom: 5px;
-  right: 5px;
+  bottom: 8px;
+  right: 8px;
   width: 40px;
   height: 200px;
   z-index: 9999;
@@ -243,7 +272,7 @@ html,body,#app,#container
   {
     display: block;
     position: relative;
-    margin-top: 5px;
+    margin-top: 8px;
     width: 40px;
     height: 40px;
     background-color: #fff;
@@ -258,14 +287,28 @@ html,body,#app,#container
       border-radius: 50%;
       transform: translate(-50%, -50%);
     }
-    &.icon-mode
+    &.icon-location
     {
       img
       {
-        max-width: 36px;
-        max-height: 36px;
+        max-width: 34px;
+        max-height: 34px;
       }
     }
   }
+}
+.fixed-info
+{
+  position: fixed;
+  bottom: 5px;
+  left: 50%;
+  z-index: 9999;
+  padding: 0.2em 0.4em;
+  color: #666;
+  background-color: #fff;
+  border-radius: 4px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10px;
 }
 </style>
