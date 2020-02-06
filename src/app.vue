@@ -10,8 +10,8 @@
           <span class="last"><label>较昨日</label><b>+{{DATA_STATISTICS.count.newPeople}}</b></span>
           <cite class="current"><label>确诊人数</label><b>{{DATA_STATISTICS.count.people}}</b></cite>
         </div>
-        <a class="item item-more" target="_blank" :href="DATA_STATISTICS.update.url" @click="showDetail">
-          <cite>查看详细</cite>
+        <a class="item item-more" @click="showDetail">
+          <cite>查看更多</cite>
           <span>{{DATA_STATISTICS.update.date}}</span>
         </a>
       </template>
@@ -34,6 +34,21 @@
         <span>源码</span>
       </a>
     </div>
+    <modal ref="modalDetail" title="详细数据" class="modal-detail">
+      <div v-if="!currentPoint" class="tip">如您想查看与确诊小区的距离，请先点击 <a @click="getCurrentLocation" >[获取当前位置]</a> </div>
+      <dl v-for="area in dataCase" :key="area.key" :class="['area-list']">
+        <dt class="name">
+          {{area.key}}<span>(<b>{{area.list.length}}</b>个确诊小区)</span>
+        </dt>
+        <ul class="community-list">
+          <li v-for="(item, index) in area.list" :key="index" class="item">
+            <label>{{item.name}}</label>
+            <span v-if="item.distance" >距您 {{item.distance}} km</span>
+          </li>
+        </ul>
+      </dl>
+      <div class="source-info">数据来源于 <a target="_blank" :href="DATA_STATISTICS.update.url">{{DATA_STATISTICS.update.author}}</a></div>
+    </modal>
     <!-- <div v-if="DATA_STATISTICS && DATA_STATISTICS.update" class="fixed-info">
         数据来源于 <a target="_blank" :href="DATA_STATISTICS.update.url">{{DATA_STATISTICS.update.author}}</a>
         &nbsp;&nbsp;更新时间：{{DATA_STATISTICS.update.date}}
@@ -44,6 +59,7 @@
 
 <script>
 import { DATA_CASE, DATA_STATISTICS } from './data.js'
+import modal from './components/modal'
 const BMap = window['BMap']
 const BMapLib = window['BMapLib']
 const isSupportCanvas = () => {
@@ -54,35 +70,61 @@ export default {
   name: 'app',
   data () {
     return {
+      DATA_STATISTICS,
+      dataCase: [],
       map: null,
       showMode: 'marker',
+      cityPoint: null,
       currentPoint: null,
+      currentMarker: null,
       markerList: [],
-      heatmapOverlay: null,
-      DATA_STATISTICS: DATA_STATISTICS
+      heatmapOverlay: null
     }
   },
+  components: { modal },
   mounted () {
+    this.parseData()
     this.initMap()
     this.initMarker()
     this.initHeat()
   },
   methods: {
+    parseData () {
+      this.dataCase = (() => {
+        let areaList = []
+        DATA_CASE.forEach((area) => {
+          let tempArea = {
+            key: area.key,
+            list: []
+          }
+          area.list.forEach((item) => {
+            let temp = item.split(',')
+            tempArea.list.push({
+              lng: temp[0],
+              lat: temp[1],
+              name: temp[2],
+              distance: null
+            })
+          })
+          areaList.push(tempArea)
+        })
+        return areaList
+      })()
+    },
     initMap () {
       if (!BMap) {
         return
       }
       this.map = new BMap.Map('container')
-      let point = new BMap.Point(117.233675, 31.827828)
-      this.map.centerAndZoom(point, 12)
+      this.cityPoint = new BMap.Point(117.233675, 31.827828) // 合肥
+      this.map.centerAndZoom(this.cityPoint, 12)
       this.map.enableScrollWheelZoom()
     },
     initMarker () {
-      DATA_CASE.forEach((area) => {
+      this.dataCase.forEach((area) => {
         area.list.forEach((item) => {
-          let temp = item.split(',')
-          let point = new BMap.Point(temp[0], temp[1])
-          let label = new BMap.Label(temp[2], {
+          let point = new BMap.Point(item.lng, item.lat)
+          let label = new BMap.Label(item.name, {
             offset: new BMap.Size(5, -20)
           })
           label.setStyle({ padding: '2px 3px', lineHeight: '1em', color: '#dc6450', fontSize: '11px', backgroundColor: 'rgba(255,255,255, 0.8)', borderColor: 'rgba(220,100,80,0.5)' })
@@ -105,11 +147,10 @@ export default {
       }
       let points = [
       ]
-      DATA_CASE.forEach((area) => {
+      this.dataCase.forEach((area) => {
         area.list.forEach((item) => {
-          let temp = item.split(',')
           points.push({
-            'lng': temp[0], 'lat': temp[1], 'count': 10
+            'lng': item.lng, 'lat': item.lat, 'count': 10
           })
         })
       })
@@ -127,6 +168,7 @@ export default {
     },
     switchShowMode (mode) {
       this.showMode = mode
+      this.map.centerAndZoom(this.currentPoint || this.cityPoint, 12)
       if (mode === 'heat') {
         this.heatmapOverlay.show()
         this.markerList.forEach((marker) => {
@@ -147,29 +189,61 @@ export default {
           alert('获取位置失败，请重试')
           return
         }
-        if (this.currentPoint) {
-          this.currentPoint.remove()
+        this.currentPoint = r.point
+        this.getDistance()
+        if (this.currentMarker) {
+          this.currentMarker.remove()
         }
         let icon = new BMap.Icon('./img/point.png', new BMap.Size(30, 30), {
           imageSize: new BMap.Size(30, 30)
         })
-        this.currentPoint = new BMap.Marker(r.point, { icon })
-        this.map.addOverlay(this.currentPoint)
+        this.currentMarker = new BMap.Marker(r.point, { icon })
+        this.map.addOverlay(this.currentMarker)
         this.map.centerAndZoom(r.point, 15)
       }, { enableHighAccuracy: true })
       window['_hmt'] && window['_hmt'].push(['_trackEvent', '我的位置', ''])
+    },
+    getDistance () {
+      this.dataCase.forEach((area) => {
+        area.list.forEach((item) => {
+          let point = new BMap.Point(item.lng, item.lat)
+          let distance = Math.ceil(this.map.getDistance(this.currentPoint, point))
+          item.distance = (distance / 1000).toFixed(2)
+        })
+        // 区域内排序
+        area.list.sort((a, b) => {
+          if (a.distance && b.distance) {
+            return a.distance - b.distance
+          }
+          return -1
+        })
+      })
+      // 区域排序
+      this.dataCase.sort((a, b) => {
+        let aTemp = a.list[0]
+        let bTemp = b.list[0]
+        if (aTemp && aTemp.distance && bTemp && bTemp.distance) {
+          return aTemp.distance - bTemp.distance
+        }
+        return -1
+      })
     },
     goGithub () {
       window['_hmt'] && window['_hmt'].push(['_trackEvent', '查看源码', ''])
     },
     showDetail () {
-      window['_hmt'] && window['_hmt'].push(['_trackEvent', '查看详细', ''])
+      this.$refs.modalDetail.show()
+      window['_hmt'] && window['_hmt'].push(['_trackEvent', '查看更多', ''])
     }
   }
 }
 </script>
 
 <style lang="scss">
+*
+{
+  box-sizing: border-box;
+}
 html,body,#app,#container
 {
   flex: 1;
@@ -177,6 +251,14 @@ html,body,#app,#container
   flex-direction: column;
   margin: 0px;
   height: 100%;
+  font-size: 12px;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto","Oxygen","Ubuntu","Cantarell","Fira Sans","Droid Sans","Helvetica Neue",sans-serif;
+}
+ul,li,dl,dt,dd
+{
+  margin: 0px;
+  padding: 0px;
+  list-style-type: none;
 }
 .fixed-header
 {
@@ -359,4 +441,109 @@ html,body,#app,#container
     color: #576b95;
   }
 }
+.modal-detail
+{
+  .tip
+  {
+    margin: 10px 0px;
+    text-indent: 5px;
+    color: #666;
+    font-size: 11px;
+    a
+    {
+      font-size: 12px;
+      color: #dc6450;
+    }
+  }
+  .area-list
+  {
+    margin: 5px 15px 10px 5px;
+    // max-height: 36px;
+    background-color: #F7F7F7;
+    border-radius: 3px;
+    box-shadow: 0px 0px 2px 0px rgba(#999, 0.5);
+    overflow: hidden;
+    transition: all 0.3s;
+    // &.active
+    // {
+    //   max-height: 2000px;
+    // }
+    .name
+    {
+      line-height: 36px;
+      text-indent: 5px;
+      font-size: 15px;
+      color: #333;
+      span
+      {
+        margin-left: 5px;
+        font-size: 13px;
+        color: #666;
+        b
+        {
+          margin: 0px 2px;
+          color: #dc6450;
+          font-weight: normal;
+          font-size: 14px;
+        }
+      }
+    }
+    .community-list
+    {
+      padding: 3px 5px 0px 8px;
+      background-color: #fff;
+      .item
+      {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        height: 32px;
+        font-size: 13px;
+        color: #444;
+        label
+        {
+          flex: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        span
+        {
+          flex: 0 0 90px;
+          color: #666;
+          font-size: 12px;
+          text-align: right;
+        }
+      }
+      .item + .item
+      {
+        &::before
+        {
+          content: '';
+          position: absolute;
+          top: 0px;
+          left: 0px;
+          width: 100%;
+          height: 1px;
+          background-color: rgba(#ddd, 0.7);
+          transform: scaleY(0.5);
+        }
+      }
+    }
+  }
+  .source-info
+  {
+    margin: 10px 0px;
+    text-align: center;
+    color: #666;
+    font-size: 13px;
+    a
+    {
+      color: #576b95;
+    }
+  }
+}
+
 </style>
