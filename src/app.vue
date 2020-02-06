@@ -1,13 +1,25 @@
 <template>
   <div id="app">
-    <!-- <div class="header">
-      <h1>合肥新冠状病毒感染确诊病例</h1>
-      <p>数据来源于 <a target="_blank" href="http://wjw.hefei.gov.cn/ztzl/xxgzbdgrdfyyqfk/xxfb/17723019.html">合肥卫健委</a> ，仅供参考，不喜勿喷</p>
-    </div> -->
+    <div class="fixed-header">
+      <template v-if="DATA_STATISTICS && DATA_STATISTICS.update && DATA_STATISTICS.count">
+        <div class="item">
+          <span class="last"><label>较昨日</label><b>+{{DATA_STATISTICS.count.newCommunity}}</b></span>
+          <cite class="current"><label>确诊小区</label><b>{{DATA_STATISTICS.count.community}}</b></cite>
+        </div>
+        <div class="item">
+          <span class="last"><label>较昨日</label><b>+{{DATA_STATISTICS.count.newPeople}}</b></span>
+          <cite class="current"><label>确诊人数</label><b>{{DATA_STATISTICS.count.people}}</b></cite>
+        </div>
+        <a class="item item-more" target="_blank" :href="DATA_STATISTICS.update.url" @click="showDetail">
+          <cite>查看详细</cite>
+          <span>{{DATA_STATISTICS.update.date}}</span>
+        </a>
+      </template>
+    </div>
     <div class="fixed-link">
       <a @click="switchShowMode('marker')">
         <img src="./assets/icon-marker.png">
-        <span>小区明细</span>
+        <span>小区分布</span>
       </a>
       <a @click="switchShowMode('heat')">
         <img src="./assets/icon-heat.png">
@@ -17,18 +29,21 @@
         <img src="./assets/icon-location.png">
         <span>我的位置</span>
       </a>
-      <a href="https://github.com/twoer/2019-nCoV-HF">
+      <a @click="goGithub" target="_blank" href="https://github.com/twoer/2019-nCoV-HF">
         <img src="./assets/icon-github.png">
         <span>源码</span>
       </a>
     </div>
-    <div class="fixed-info">数据来源于 <a target="_blank" href="http://wjw.hefei.gov.cn/ztzl/xxgzbdgrdfyyqfk/xxfb/17723019.html">合肥卫健委</a> ，更新时间：2020/02/04 20:00</div>
+    <!-- <div v-if="DATA_STATISTICS && DATA_STATISTICS.update" class="fixed-info">
+        数据来源于 <a target="_blank" :href="DATA_STATISTICS.update.url">{{DATA_STATISTICS.update.author}}</a>
+        &nbsp;&nbsp;更新时间：{{DATA_STATISTICS.update.date}}
+    </div> -->
     <div id="container"></div>
   </div>
 </template>
 
 <script>
-import dataCase from './data.js'
+import { DATA_CASE, DATA_STATISTICS } from './data.js'
 const BMap = window['BMap']
 const BMapLib = window['BMapLib']
 const isSupportCanvas = () => {
@@ -43,7 +58,8 @@ export default {
       showMode: 'marker',
       currentPoint: null,
       markerList: [],
-      heatmapOverlay: null
+      heatmapOverlay: null,
+      DATA_STATISTICS: DATA_STATISTICS
     }
   },
   mounted () {
@@ -62,7 +78,7 @@ export default {
       this.map.enableScrollWheelZoom()
     },
     initMarker () {
-      dataCase.forEach((area) => {
+      DATA_CASE.forEach((area) => {
         area.list.forEach((item) => {
           let temp = item.split(',')
           let point = new BMap.Point(temp[0], temp[1])
@@ -89,7 +105,7 @@ export default {
       }
       let points = [
       ]
-      dataCase.forEach((area) => {
+      DATA_CASE.forEach((area) => {
         area.list.forEach((item) => {
           let temp = item.split(',')
           points.push({
@@ -122,6 +138,7 @@ export default {
           marker.show()
         })
       }
+      window['_hmt'] && window['_hmt'].push(['_trackEvent', '模式切换', mode])
     },
     getCurrentLocation () {
       let geolocation = new BMap.Geolocation()
@@ -138,9 +155,15 @@ export default {
         })
         this.currentPoint = new BMap.Marker(r.point, { icon })
         this.map.addOverlay(this.currentPoint)
-        // this.map.panTo(r.point)
         this.map.centerAndZoom(r.point, 15)
       }, { enableHighAccuracy: true })
+      window['_hmt'] && window['_hmt'].push(['_trackEvent', '我的位置', ''])
+    },
+    goGithub () {
+      window['_hmt'] && window['_hmt'].push(['_trackEvent', '查看源码', ''])
+    },
+    showDetail () {
+      window['_hmt'] && window['_hmt'].push(['_trackEvent', '查看详细', ''])
     }
   }
 }
@@ -155,31 +178,101 @@ html,body,#app,#container
   margin: 0px;
   height: 100%;
 }
-.header
+.fixed-header
 {
-  flex: 0 0 50px;
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 999;
+  height: 50px;
+  background-color: #fff;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  h1,p
+  box-shadow: 1px 1px 10px rgba(0, 0,0,.1), 1px 1px 2px rgba(0, 0,0,.1);
+  .item
   {
-    margin: 0px;
-    line-height: 1.5em;
-    text-align: center;
-  }
-  h1
-  {
-    font-size: 16px;
-    color: #333;
-  }
-  p
-  {
-    font-size: 12px;
-    color: #777;
-    a
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    align-items: center;
+    position: relative;
+    .last
     {
-      color: #576b95;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      height: 16px;
+      font-size: 10px;
+      label
+      {
+        margin-right: 4px;
+        color: #ddd;
+      }
+      b
+      {
+        color: rgb(247, 76, 49);
+      }
+    }
+    .current
+    {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      height: 20px;
+      font-weight: normal;
+      font-style: normal;
+      font-size: 12px;
+      label
+      {
+        margin-right: 4px;
+        font-size: 10px;
+        color: #888;
+      }
+      b
+      {
+        line-height: 18px;
+        color: rgb(247, 76, 49);
+        font-size: 18px;
+      }
+    }
+  }
+  .item:first-child + .item
+  {
+    &::before
+    {
+      content: '';
+      position: absolute;
+      top: 15%;
+      left: 0px;
+      width: 1px;
+      height: 70%;
+      background-color: rgba(#ddd, 0.7);
+    }
+  }
+  .item-more
+  {
+    flex: 0 0 35%;
+    margin: 0px;
+    padding: 0px;
+    background-color: #dc6450;
+    text-decoration: none;
+    span
+    {
+      font-size: 10px;
+      color: #eeb4aa;
+    }
+    cite
+    {
+      font-size: 14px;
+      font-style: normal;
+      color: #fff;
     }
   }
 }
@@ -196,6 +289,7 @@ html,body,#app,#container
   justify-content: flex-end;
   background-color: #fff;
   border-radius: 4px;
+  box-shadow: 1px 1px 10px rgba(0, 0,0,.1), 1px 1px 2px rgba(0, 0,0,.1);
   a
   {
     display: block;
@@ -206,17 +300,21 @@ html,body,#app,#container
     justify-content: center;
     align-items: center;
     text-decoration: none;
+    transition: all 0.3s;
+    &:active
+    {
+      background-color: rgba(#999, 0.2);
+    }
     img
     {
       max-width: 28px;
       max-height: 28px;
-      border-radius: 50%;
     }
     span
     {
-      margin-top: 5px;
+      margin-top: 2px;
       font-size: 11px;
-      color: #555;
+      color: #666;
       letter-spacing: -0.5px;
     }
     // &.icon-location
