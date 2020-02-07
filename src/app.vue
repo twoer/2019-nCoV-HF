@@ -18,36 +18,42 @@
     </div>
     <div class="fixed-link">
       <a @click="switchShowMode('marker')">
-        <img src="./assets/icon-marker.png">
+        <img src="./assets/img/icon-marker.png">
         <span>小区分布</span>
       </a>
       <a @click="switchShowMode('heat')">
-        <img src="./assets/icon-heat.png">
+        <img src="./assets/img/icon-heat.png">
         <span>热力图</span>
       </a>
       <a @click="getCurrentLocation" class="icon-location">
-        <img src="./assets/icon-location.png">
+        <img src="./assets/img/icon-location.png">
         <span>我的位置</span>
       </a>
       <a @click="goGithub" target="_blank" href="https://github.com/twoer/2019-nCoV-HF">
-        <img src="./assets/icon-github.png">
+        <img src="./assets/img/icon-github.png">
         <span>源码</span>
       </a>
     </div>
     <modal ref="modalDetail" title="详细数据" class="modal-detail">
       <div v-if="!currentPoint" class="tip">如您想查看与确诊小区的距离，请先点击 <a @click="getCurrentLocation" >[获取当前位置]</a> </div>
-      <dl v-for="area in dataCase" :key="area.key" :class="['area-list']">
-        <dt class="name">
-          {{area.key}}<span>(<b>{{area.list.length}}</b>个确诊小区)</span>
-        </dt>
-        <ul class="community-list">
-          <li v-for="(item, index) in area.list" :key="index" class="item">
-            <label>{{item.name}}</label>
-            <span v-if="item.distance" >距您 {{item.distance}} km</span>
-          </li>
-        </ul>
-      </dl>
-      <div class="source-info">数据来源于 <a target="_blank" :href="DATA_STATISTICS.update.url">{{DATA_STATISTICS.update.author}}</a></div>
+      <div class="area-group">
+        <div class="slot-wrapper">
+          <dl v-for="area in dataCase" :key="area.key" :class="['area-list']">
+            <dt class="name">
+              {{area.key}}<span>(<b>{{area.list.length}}</b>个确诊小区)</span>
+            </dt>
+            <ul class="community-list">
+              <li v-for="(item, index) in area.list" :key="index" class="item">
+                <label>{{item.name}}</label>
+                <span v-if="item.distance" >距您 {{item.distance}} km</span>
+              </li>
+            </ul>
+          </dl>
+          <div class="source-info">
+            数据来源于 <a target="_blank" :href="DATA_STATISTICS.update.url">{{DATA_STATISTICS.update.author}}</a>
+          </div>
+        </div>
+      </div>
     </modal>
     <!-- <div v-if="DATA_STATISTICS && DATA_STATISTICS.update" class="fixed-info">
         数据来源于 <a target="_blank" :href="DATA_STATISTICS.update.url">{{DATA_STATISTICS.update.author}}</a>
@@ -232,34 +238,14 @@ export default {
       window['_hmt'] && window['_hmt'].push(['_trackEvent', '查看源码', ''])
     },
     showDetail () {
-      this.$refs.modalDetail.show()
+      this.$refs.modalDetail.toggle()
       window['_hmt'] && window['_hmt'].push(['_trackEvent', '查看更多', ''])
     }
   }
 }
 </script>
 
-<style lang="scss">
-*
-{
-  box-sizing: border-box;
-}
-html,body,#app,#container
-{
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  margin: 0px;
-  height: 100%;
-  font-size: 12px;
-  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto","Oxygen","Ubuntu","Cantarell","Fira Sans","Droid Sans","Helvetica Neue",sans-serif;
-}
-ul,li,dl,dt,dd
-{
-  margin: 0px;
-  padding: 0px;
-  list-style-type: none;
-}
+<style lang="scss" scoped>
 .fixed-header
 {
   position: fixed;
@@ -361,7 +347,7 @@ ul,li,dl,dt,dd
 .fixed-link
 {
   position: fixed;
-  bottom: 8px;
+  bottom: 15px;
   right: 8px;
   width: 50px;
   z-index: 9999;
@@ -445,32 +431,39 @@ ul,li,dl,dt,dd
 {
   .tip
   {
-    margin: 10px 0px;
-    text-indent: 5px;
+    // margin-top: 5px;
+    padding: 8px 0px;
     color: #666;
     font-size: 11px;
+    text-align: center;
+    // border-top: solid 1px rgba(#ddd, 0.4);
     a
     {
       font-size: 12px;
       color: #dc6450;
     }
   }
+  .area-group
+  {
+    flex: 1;
+    margin: 5px 5px 2px 5px;
+    border: solid 1px rgba(#e4e4e4, 0.6);
+    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    .slot-wrapper
+    {
+      height: calc(100% + 1px); /*no*/
+    }
+  }
   .area-list
   {
-    margin: 5px 15px 10px 5px;
-    // max-height: 36px;
     background-color: #F7F7F7;
-    border-radius: 3px;
-    box-shadow: 0px 0px 2px 0px rgba(#999, 0.5);
     overflow: hidden;
     transition: all 0.3s;
-    // &.active
-    // {
-    //   max-height: 2000px;
-    // }
     .name
     {
-      line-height: 36px;
+      line-height: 34px;
       text-indent: 5px;
       font-size: 15px;
       color: #333;
@@ -490,7 +483,7 @@ ul,li,dl,dt,dd
     }
     .community-list
     {
-      padding: 3px 5px 0px 8px;
+      padding: 3px 10px 0px 8px;
       background-color: #fff;
       .item
       {
@@ -511,7 +504,7 @@ ul,li,dl,dt,dd
         }
         span
         {
-          flex: 0 0 90px;
+          flex: 0 0 100px;
           color: #666;
           font-size: 12px;
           text-align: right;
@@ -535,10 +528,11 @@ ul,li,dl,dt,dd
   }
   .source-info
   {
-    margin: 10px 0px;
+    padding: 10px 0px;
     text-align: center;
     color: #666;
     font-size: 13px;
+    border-top: solid 1px #f7f7f7;
     a
     {
       color: #576b95;
