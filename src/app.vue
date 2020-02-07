@@ -168,7 +168,7 @@ export default {
     },
     switchShowMode (mode) {
       this.showMode = mode
-      this.map.centerAndZoom(this.currentPoint || this.cityPoint, 12)
+      // this.map.setZoom(12)
       if (mode === 'heat') {
         this.heatmapOverlay.show()
         this.markerList.forEach((marker) => {

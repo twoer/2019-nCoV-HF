@@ -126,7 +126,7 @@ const DATA_CASE = [
       '117.312057,31.904238,昊天园小区',
       '117.349143,31.905215,新海尚宸家园',
       '117.362138,31.892728,园上园公寓楼',
-      '117.337514,31.943006,京商商贸城',
+      '117.355525,31.930388,京商商贸城',
       '117.331305,31.924482,金辉悦府小区',
       '117.324845,31.911331,张洼新村'
     ]
@@ -135,12 +135,12 @@ const DATA_CASE = [
 
 const DATA_STATISTICS = {
   update: {
-    date: '2020/02/06 19:30',
+    date: '2020/02/07 09:00',
     url: 'http://wjw.hefei.gov.cn/ztzl/xxgzbdgrdfyyqfk/xxfb/17723503.html',
     author: '合肥卫健委'
   },
   count: {
-    people: 104,
+    people: 115,
     newPeople: 11,
     community: 78,
     newCommunity: 10
