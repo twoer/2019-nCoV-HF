@@ -87,7 +87,9 @@ const DATA_CASE = [
       '117.373096,31.88677,海洲景秀世家2期',
       '117.37806,31.870191,马岗社区龙岗管委会宿舍楼',
       '117.314396,31.888912,红星家园',
-      '117.341577,31.881362,香江世纪名城'
+      '117.341577,31.881362,香江世纪名城',
+      '117.346569,31.86809,国安家园',
+      '117.314894,31.886309,罗马花园西区'
     ]
   },
   {
@@ -160,15 +162,15 @@ const DATA_CASE = [
 
 const DATA_STATISTICS = {
   update: {
-    date: '2020/02/11 22:00',
+    date: '2020/02/12 20:00',
     url: 'http://wjw.hefei.gov.cn/ztzl/xxgzbdgrdfyyqfk/index.html',
     author: '合肥卫健委'
   },
   count: {
-    people: 150,
-    newPeople: 3,
-    community: 103,
-    newCommunity: 3
+    people: 157,
+    newPeople: 7,
+    community: 105,
+    newCommunity: 2
   }
 }
 
