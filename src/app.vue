@@ -40,11 +40,11 @@
         <div class="slot-wrapper">
           <dl v-for="area in dataCase" :key="area.key" :class="['area-list']">
             <dt class="name">
-              {{area.key}}<span>(<b>{{area.list.length}}</b>个确诊小区)</span>
+              {{area.key}}<span>（确诊小区<b>{{area.count}}</b>个，确诊<b>{{area.peopleCount}}</b>例，出院<b>{{area.peopleDischarge}}</b>例）</span>
             </dt>
             <ul class="community-list">
               <li v-for="(item, index) in area.list" :key="index" class="item">
-                <label>{{item.name}}</label>
+                <label>{{item.name}}<span>（确诊<b>{{item.count}}</b>例，出院<b>{{item.discharge}}</b>例）</span></label>
                 <span v-if="item.distance" >距您 {{item.distance}} km</span>
               </li>
             </ul>
@@ -78,6 +78,7 @@ export default {
     return {
       DATA_STATISTICS,
       dataCase: [],
+      maxCount: 0,
       map: null,
       showMode: 'marker',
       cityPoint: null,
@@ -101,16 +102,17 @@ export default {
         DATA_CASE.forEach((area) => {
           let tempArea = {
             key: area.key,
-            list: []
+            list: [],
+            count: area.list.length || 0,
+            peopleCount: 0,
+            peopleDischarge: 0
           }
           area.list.forEach((item) => {
-            let temp = item.split(',')
-            tempArea.list.push({
-              lng: temp[0],
-              lat: temp[1],
-              name: temp[2],
-              distance: null
-            })
+            item.distance = null
+            tempArea.peopleCount += item.count
+            tempArea.peopleDischarge += item.discharge
+            tempArea.list.push(item)
+            this.maxCount = Math.max(this.maxCount, item.count)
           })
           areaList.push(tempArea)
         })
@@ -130,10 +132,10 @@ export default {
       this.dataCase.forEach((area) => {
         area.list.forEach((item) => {
           let point = new BMap.Point(item.lng, item.lat)
-          let label = new BMap.Label(item.name, {
+          let label = new BMap.Label(`${item.name}&nbsp;<span style="color:#888">确诊<b style="margin-left: 1px;color:#dc6450; font-weight: normal">${item.count}</b>&nbsp;出院<b style="margin-left: 1px;color:#dc6450; font-weight: normal">${item.discharge}</b></span>`, {
             offset: new BMap.Size(5, -20)
           })
-          label.setStyle({ padding: '2px 3px', lineHeight: '1em', color: '#dc6450', fontSize: '11px', backgroundColor: 'rgba(255,255,255, 0.8)', borderColor: 'rgba(220,100,80,0.5)' })
+          label.setStyle({ padding: '3px 3px', lineHeight: '1em', color: '#dc6450', fontSize: '11px', backgroundColor: 'rgba(255,255,255, 0.8)', borderColor: 'rgba(220,100,80,0.5)' })
           let icon = new BMap.Icon('./img/marker.png', new BMap.Size(20, 20), {
             imageSize: new BMap.Size(20, 20)
           })
@@ -156,7 +158,7 @@ export default {
       this.dataCase.forEach((area) => {
         area.list.forEach((item) => {
           points.push({
-            'lng': item.lng, 'lat': item.lat, 'count': 10
+            'lng': item.lng, 'lat': item.lat, 'count': item.count
           })
         })
       })
@@ -167,7 +169,7 @@ export default {
           0.8: 'rgb(100, 0, 255)'
         } })
       this.map.addOverlay(this.heatmapOverlay)
-      this.heatmapOverlay.setDataSet({ data: points, max: 13 })
+      this.heatmapOverlay.setDataSet({ data: points, max: this.maxCount })
       if (this.showMode !== 'heat') {
         this.heatmapOverlay.hide()
       }
@@ -501,6 +503,12 @@ export default {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          b
+          {
+            margin: 0px 1px;
+            color: #dc6450;
+            font-weight: normal;
+          }
         }
         span
         {
